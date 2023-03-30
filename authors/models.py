@@ -13,13 +13,14 @@ class Author(models.Model):
     rating = models.IntegerField(default=0)
 
     def update_rating(self):
-        # my_posts = self.posts
-        # post_comments = [p.post_comments.get().aggregate(sum=Sum('rating'))['sum'] for p in my_posts]
-        # post_comments = sum(post_comments)
-        sum_posts = sum(self.posts.values('rating')) * 3
-        sum_comments = sum(self.comments.values('rating'))
-        self.rating = sum_posts + sum_comments
-
+        my_posts = self.posts.all()
+        post_comments = [p.post_comments.aggregate(sum=Sum('rating'))['sum'] for p in my_posts]
+        post_comments = sum(post_comments)
+        posts = self.posts.values('rating')
+        posts = sum(p['rating'] for p in posts) * 3
+        comments = self.user.comments.values('rating')
+        comments = sum(c['rating'] for c in comments)
+        self.rating = posts + comments + post_comments
 
 class Category(models.Model):
     name = models.CharField(unique=True, max_length=256)

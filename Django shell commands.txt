@@ -65,6 +65,11 @@ article4.dislike()
 article4.save()
 
 
+authors = Author.objects.all()
+author1 = authors[0]
+author1.update_rating()
 
-
-
+author_max = Author.objects.order_by('-rating').values('user__username', 'rating').first()
+post_max= Post.objects.order_by('-rating').values('created_at', 'author__user__username', 'rating', 'title').first()
+p =Post.objects.get(id=post_max['pk'])
+all_c =p.post_comments.all()
