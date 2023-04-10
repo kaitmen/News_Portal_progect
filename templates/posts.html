@@ -1,0 +1,18 @@
+
+{% extends 'flatpages/default.html' %}
+{% load censor %}
+
+
+{% block title %}
+Posts
+{% endblock title %}
+
+
+{% block content %}
+<h1>Все статьи {{posts|length}}</h1>
+{% for post in posts %}
+<a href="{% url 'authors:post' pk=post.pk %}">{{ post.title|my_censor }}</a>
+<br> {{post.created_at|date:'d M Y'}} <br> {{ post.text|truncatechars:20|my_censor }}<hr>
+{% endfor %}
+
+{% endblock content %}
