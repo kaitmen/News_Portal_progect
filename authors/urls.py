@@ -5,6 +5,7 @@ app_name = "authors"
 urlpatterns = [
 
    path('', PostsList.as_view()),
+   path('search/', PostsSearch.as_view()),
 
    path('<int:pk>', PostDetail.as_view(), name = "post"),
 ]
