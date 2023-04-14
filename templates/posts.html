@@ -15,8 +15,19 @@ Posts
    </form>
 <h1>Все статьи {{posts|length}}</h1>
 {% for post in posts %}
-<a href="{% url 'authors:post' pk=post.pk %}">{{ post.title|my_censor }}</a>
-<br> {{post.created_at|date:'d M Y'}} <br> {{ post.text|truncatechars:20|my_censor }}<hr>
+<p><a href="{% url 'authors:post' pk=post.pk %}">{{ post.title|my_censor }}</a>
+{% if post.type == 'A' %}
+    <a href="{% url 'authors:article-edit' pk=post.pk %}">Edit</a>
+    <a href="{% url 'authors:article-delete' pk=post.pk %}">Delete</a>
+{% else %}
+    <a href="{% url 'authors:news-edit' pk=post.pk %}">Edit</a>
+    <a href="{% url 'authors:news-delete' pk=post.pk %}">Delete</a>
+{% endif %}
+
+    </p>
+<br> {{post.created_at|date:'d M Y'}} <br> {{ post.text|truncatechars:20|my_censor }}
+
+<hr>
 {% endfor %}
 {% if page_obj.has_previous %}
        {# Для каждой ссылки пагинации указываем обработку через новый тег #}
