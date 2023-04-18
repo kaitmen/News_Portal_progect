@@ -1,3 +1,5 @@
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db.models import Q
 from django.urls import reverse_lazy
@@ -30,7 +32,7 @@ class PostsList(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        context['is_not_authors'] = not self.request.user.groups.filter(name='authors').exists()
         context['filterset'] = self.filterset
         return context
 
@@ -68,11 +70,13 @@ class PostsSearch(ListView):
         return context
 
 
-class NewsCreate(CreateView):
+
+
+class NewsCreate(PermissionRequiredMixin, LoginRequiredMixin,CreateView):
     model = Post
     fields = ['categories', 'title', 'text']
     success_url = reverse_lazy('authors:posts')
-
+    permission_required = ('authors.NewsCreate',)
     def form_valid(self, form):
         author = Author.objects.filter(user=self.request.user.id).first()
         if not author:
@@ -86,11 +90,11 @@ class NewsCreate(CreateView):
         return super(NewsCreate, self).form_valid(form)
 
 
-class ArticleCreate(CreateView):
+class ArticleCreate(PermissionRequiredMixin, LoginRequiredMixin,CreateView):
     model = Post
     fields = ['categories', 'title', 'text']
     success_url = reverse_lazy('authors:posts')
-
+    permission_required = ('authors.ArticleCreate',)
     def form_valid(self, form):
         author = Author.objects.filter(user=self.request.user.id).first()
         if not author:
@@ -103,9 +107,9 @@ class ArticleCreate(CreateView):
 
         return super(ArticleCreate, self).form_valid(form)
 
-class PostFormView(UpdateView):
+class PostFormView(PermissionRequiredMixin, LoginRequiredMixin,UpdateView):
     model = Post
-
+    permission_required = ('authors.PostFormView',)
     fields = [
         "title",
         "text"
@@ -114,7 +118,7 @@ class PostFormView(UpdateView):
     success_url = reverse_lazy('authors:posts')
 
 
-class PostDeleteView(DeleteView):
+class PostDeleteView(LoginRequiredMixin,DeleteView):
     model = Post
 
     success_url = reverse_lazy('authors:posts')

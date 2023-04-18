@@ -9,6 +9,9 @@ Posts
 
 
 {% block content %}
+{% if is_not_authors %}
+<button> <a href="{% url 'sign:upgrade'%}"> стать автором!</a> </button>
+{% endif %}
 <form action="" method="get">
        {{ filterset.form.as_p }}
        <input type="submit" value="Найти" />
