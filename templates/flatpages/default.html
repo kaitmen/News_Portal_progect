@@ -22,6 +22,7 @@
           {% if user.is_authenticated %}
 <p>Welcome {{ user.username }} !!!</p>
           <a href="{% url 'account_logout' %}">log out</a>
+          <a href="{% url 'authors:subscribe' %}"><i class="bi bi-plus-circle"></i>Subscribe</a>
 {% else %}
 <a href="{% provider_login_url 'google' %}">Sign Up</a>
 {% endif %}

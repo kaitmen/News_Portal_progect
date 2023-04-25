@@ -24,8 +24,17 @@ class Author(models.Model):
 
 class Category(models.Model):
     name = models.CharField(unique=True, max_length=256)
+    subscribers = models.TextField(blank=True, null=True)
 
-
+    def get_subscribers(self):
+        return self.subscribers.split(';')
+    def add_subscriber(self,email):
+        if self.subscribers:
+            s = self.subscribers.split(';')
+            s.append(email)
+            self.subscribers = ';'.join(s)
+        else:
+            self.subscribers = email
 class Post(models.Model):
     author = models.ForeignKey(
         Author, related_name='posts',

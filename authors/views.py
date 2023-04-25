@@ -1,15 +1,35 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
+from django.core.mail import EmailMultiAlternatives
+from django.views import View
 
 from .filters import PostFilter
 from django.views.generic import ListView, DetailView, CreateView
 from django.views.generic.edit import UpdateView, DeleteView
+from django.template.loader import render_to_string  # импортируем функцию, которая срендерит наш html в текст
+from .forms import PostForm, ChooseCategoryForm
+from .models import Post, Author, Category
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.core.mail import mail_managers
+from datetime import datetime, timedelta, time
 
-from .forms import PostForm
-from .models import Post, Author
+@receiver(post_save, sender=Post)
+def notify_managers_post(sender, instance, created, **kwargs):
+    if created:
+        subject = f'{instance.client_name} {instance.date.strftime("%d %m %Y")}'
+    else:
+        subject = f'post changed for {instance.client_name} {instance.date.strftime("%d %m %Y")}'
+
+    mail_managers(
+        subject=subject,
+        message=instance.message,
+    )
 
 
 class PostsList(ListView):
@@ -84,6 +104,41 @@ class NewsCreate(PermissionRequiredMixin, LoginRequiredMixin,CreateView):
             messages.error(self.request, "You not author, we get first.")
         else:
             messages.success(self.request, "The task was created successfully.")
+            today = datetime.now().date()
+            tomorrow = today + timedelta(1)
+            today_start = datetime.combine(today, time())
+            today_end = datetime.combine(tomorrow, time())
+
+            count = author.posts.filter(created_at__lte=today_end, created_at__gte=today_start).count()
+            if count == 3:
+               raise ValidationError("You was create 3 post")
+
+            cat = form.instance.categories
+            s = []
+            for c in cat:
+                s.extend(c.get_subscribers)
+            html_content = render_to_string(
+                'post_created_email.html',
+                {
+                    'user': author.user.username,
+                    'title': form.instance.title,
+                    'text': form.instance.text[:50]
+                }
+            )
+
+            # в конструкторе уже знакомые нам параметры, да? Называются правда немного по-другому, но суть та же.
+            msg = EmailMultiAlternatives(
+                subject=f'Author {author.user.username} add news {form.instance.title}',
+                body=form.instance.text[:50],
+                from_email='peterbadson@yandex.ru',
+                to=s,
+            )
+            msg.attach_alternative(html_content, "text/html")  # добавляем html
+
+            msg.send()  # отсылаем
+
+
+
         form.instance.author = author
         form.instance.type = 'N'
 
@@ -102,6 +157,14 @@ class ArticleCreate(PermissionRequiredMixin, LoginRequiredMixin,CreateView):
             messages.error(self.request, "You not author, we get first.")
         else:
             messages.success(self.request, "The task was created successfully.")
+            today = datetime.now().date()
+            tomorrow = today + timedelta(1)
+            today_start = datetime.combine(today, time())
+            today_end = datetime.combine(tomorrow, time())
+
+            count = author.posts.filter(created_at__lte=today_end, created_at__gte=today_start).count()
+            if count == 3:
+                raise ValidationError("You was create 3 post")
         form.instance.author = author
         form.instance.type = 'A'
 
@@ -124,3 +187,19 @@ class PostDeleteView(LoginRequiredMixin,DeleteView):
     success_url = reverse_lazy('authors:posts')
 
     template_name = "authors/confirm_delete.html"
+
+
+class Subscribe(View):
+    def get(self, request, *args, **kwargs):
+        form = ChooseCategoryForm()
+        return render(request, 'make_Subscribe.html', {'form':form})
+    def post(self, request, *args, **kwargs):
+        form = ChooseCategoryForm(request.POST)
+        if form.is_valid():
+            name = form.cleaned_data.get('name')
+            # for c in categories:
+            #     c.add_subscriber(self.request.user.emai)
+            print(name)
+            c = Category.objects.get(pk = name)
+            c.add_subscriber(self.request.user.email)
+        return redirect('authors:posts')
