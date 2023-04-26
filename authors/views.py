@@ -19,18 +19,21 @@ from django.dispatch import receiver
 from django.core.mail import mail_managers
 from datetime import datetime, timedelta, time
 
-@receiver(post_save, sender=Post)
-def notify_managers_post(sender, instance, created, **kwargs):
-    if created:
-        subject = f'{instance.client_name} {instance.date.strftime("%d %m %Y")}'
-    else:
-        subject = f'post changed for {instance.client_name} {instance.date.strftime("%d %m %Y")}'
+# @receiver(post_save, sender=Post)
+# def notify_managers_post(sender, instance, created, **kwargs):
+#     if created:
+#         subject = f'{instance.client_name} {instance.date.strftime("%d %m %Y")}'
+#     else:
+#         subject = f'post changed for {instance.client_name} {instance.date.strftime("%d %m %Y")}'
+#
+#     mail_managers(
+#         subject=subject,
+#         message=instance.message,
+#     )
 
-    mail_managers(
-        subject=subject,
-        message=instance.message,
-    )
 
+def home(request):
+    return redirect('authors:posts')
 
 class PostsList(ListView):
 
@@ -92,11 +95,11 @@ class PostsSearch(ListView):
 
 
 
-class NewsCreate(PermissionRequiredMixin, LoginRequiredMixin,CreateView):
+class NewsCreate(LoginRequiredMixin, CreateView):
     model = Post
     fields = ['categories', 'title', 'text']
     success_url = reverse_lazy('authors:posts')
-    permission_required = ('authors.NewsCreate',)
+    # permission_required = ('post.add_post',)
     def form_valid(self, form):
         author = Author.objects.filter(user=self.request.user.id).first()
         if not author:
@@ -112,32 +115,6 @@ class NewsCreate(PermissionRequiredMixin, LoginRequiredMixin,CreateView):
             count = author.posts.filter(created_at__lte=today_end, created_at__gte=today_start).count()
             if count == 3:
                raise ValidationError("You was create 3 post")
-
-            cat = form.instance.categories
-            s = []
-            for c in cat:
-                s.extend(c.get_subscribers)
-            html_content = render_to_string(
-                'post_created_email.html',
-                {
-                    'user': author.user.username,
-                    'title': form.instance.title,
-                    'text': form.instance.text[:50]
-                }
-            )
-
-            # в конструкторе уже знакомые нам параметры, да? Называются правда немного по-другому, но суть та же.
-            msg = EmailMultiAlternatives(
-                subject=f'Author {author.user.username} add news {form.instance.title}',
-                body=form.instance.text[:50],
-                from_email='peterbadson@yandex.ru',
-                to=s,
-            )
-            msg.attach_alternative(html_content, "text/html")  # добавляем html
-
-            msg.send()  # отсылаем
-
-
 
         form.instance.author = author
         form.instance.type = 'N'

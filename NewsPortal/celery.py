@@ -10,9 +10,9 @@ app.autodiscover_tasks()
 
 
 app.conf.beat_schedule = {
-    'action_every_monday_8am': {
-        'task': 'action',
+    'send_every_monday': {
+        'task': 'tasks.send_mail_every_monday_to_subscribers',
         'schedule': crontab(hour=8, minute=0, day_of_week='monday'),
-        'args': (agrs),
+        'args': (),
     },
 }

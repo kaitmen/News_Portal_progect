@@ -2,29 +2,14 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver  # импортируем нужный декоратор
 from django.core.mail import mail_managers
 from .models import Post
+from .tasks import send_mail_after_create_article, send_mail_after_delete_post
 
 
-# в декоратор передаётся первым аргументом сигнал, на который будет реагировать эта функция, и в отправители надо передать также модель
 @receiver(post_save, sender=Post)
 def notify_managers_post(sender, instance, created, **kwargs):
-    if created:
-        subject = f'{instance.client_name} {instance.date.strftime("%d %m %Y")}'
-    else:
-        subject = f'Post changed for {instance.client_name} {instance.date.strftime("%d %m %Y")}'
+    send_mail_after_create_article.delay(instance.id, created)
 
-    mail_managers(
-        subject=subject,
-        message=instance.message,
-    )
 
 @receiver(post_delete, sender=Post)
 def notify_managers_post_delete(sender, instance, created, **kwargs):
-    if created:
-        subject = f'{instance.client_name} {instance.date.strftime("%d %m %Y")}'
-    else:
-        subject = f'Post deleted for {instance.client_name} {instance.date.strftime("%d %m %Y")}'
-
-    mail_managers(
-        subject=subject,
-        message=instance.message,
-    )
+    send_mail_after_delete_post.delay(instance.id, created)

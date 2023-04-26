@@ -3,6 +3,7 @@ from .views import *
 app_name = "authors"
 
 urlpatterns = [
+   path('', home, name="home"),
    path('news', PostsList.as_view(), name="posts"),
    path('news/search/', PostsSearch.as_view(), name="search"),
    path('news/<int:pk>', PostDetail.as_view(), name="post"),
