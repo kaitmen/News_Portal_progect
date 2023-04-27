@@ -9,6 +9,7 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 
+
 app.conf.beat_schedule = {
     'send_every_monday': {
         'task': 'tasks.send_mail_every_monday_to_subscribers',
